@@ -112,7 +112,7 @@ def main() -> None:
     dispatcher = updater.dispatcher
 
     # Add conversation handler with the states GENDER, PHOTO, LOCATION and BIO
-    conv_handler = ConversationHandler(
+    conversation_handler = ConversationHandler(
         entry_points=[CommandHandler('start', start)],
         states={
             NAME: [MessageHandler(Filters.text & ~Filters.command, get_name)],
@@ -123,7 +123,7 @@ def main() -> None:
         fallbacks=[CommandHandler('cancel', cancel)],
     )
 
-    dispatcher.add_handler(conv_handler)
+    dispatcher.add_handler(conversation_handler)
 
     # Start the Bot
     updater.start_polling()
