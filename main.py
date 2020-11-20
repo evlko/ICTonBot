@@ -6,8 +6,14 @@ bot = telebot.TeleBot(TOKEN)
 
 
 @bot.message_handler(commands=['start', 'help'])
-def send_welcome(message):
-    bot.reply_to(message, "Приветики")
+def start_messaging(message):
+    subjects = ['Дискретка', 'Линал', 'Матан', 'Аналгеом', 'Физика', 'Готово']
+    markup = telebot.types.InlineKeyboardMarkup(row_width=1)
+    for each in subjects:
+        markup.add(telebot.types.InlineKeyboardButton(text=each, callback_data=each))
+
+    bot.reply_to(message, "Привет, выбери предметы, по которым тебе нужна помощь:", reply_markup=markup)
 
 
-bot.polling()
+if __name__ == '__main__':
+    bot.polling(none_stop=True)
