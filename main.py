@@ -1,8 +1,14 @@
 import telebot
 import config
 import typing
+import json
+from pathlib import Path
 
-bot = telebot.TeleBot(config.TOKEN)
+
+with open("config.json", "r") as file:
+    token = json.load(file)
+
+bot = telebot.TeleBot(token)
 
 selected_subjects = []
 
