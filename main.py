@@ -1,56 +1,55 @@
 import telebot
-import config
-import typing
+import time
 
-bot = telebot.TeleBot(config.TOKEN)
+import components.dialogs as dialogs
+from components.core import bot
+from components.core import logger
+from components.dialogs import DialogEvent
 
-selected_subjects = []
 
-
-@bot.message_handler(commands=['start', 'help'])
+@bot.message_handler(commands=["start", "help"])
 def start_messaging(message):
-    subjects = ['Начать общение', 'О создателях']
+    options = ["Начать общение", "О создателях"]
+    callbacks = [DialogEvent.ASK_FOR_NAME, DialogEvent.ABOUT]
 
     markup = telebot.types.InlineKeyboardMarkup(row_width=1)
-    for each in subjects:
-        markup.add(telebot.types.InlineKeyboardButton(text=each, callback_data=each))
+    for option, callback in zip(options, callbacks):
+        markup.add(telebot.types.InlineKeyboardButton(text=option, callback_data=callback))
 
-    with open('text_messages/welcome_message.txt', 'rt', encoding='utf-8') as f:
-        text = f.read()
+    with open("text_messages/welcome_message.txt", "rt", encoding="utf-8") as f:
+        message_text = f.read()
 
-    bot.send_message(message.chat.id, text, reply_markup=markup)
+    bot.send_message(message.chat.id, message_text, reply_markup=markup)
 
 
 @bot.callback_query_handler(func=lambda call: True)
-def handle_query(call):
-    if call.data == 'Готово':
+def on_dialog_event(call):
+    dialog_event = DialogEvent(int(call.data))
+
+    if dialog_event == DialogEvent.ASK_FOR_NAME:
         bot.delete_message(call.message.chat.id, call.message.message_id)
-        bot.send_message(call.message.chat.id, 'Ну и хорошо')
-    elif call.data == 'Начать общение':
-        ask_for_subjects(call.message.chat.id)
-    elif call.data == 'О создателях':
-        with open('text_messages/about.txt', 'rt', encoding='utf-8') as f:
+        dialogs.ask_for_name(call.message.chat.id)
+    elif dialog_event == DialogEvent.ABOUT:
+        bot.delete_message(call.message.chat.id, call.message.message_id)
+        with open("text_messages/about.txt", "rt", encoding="utf-8") as f:
             text = f.read()
         bot.send_message(call.message.chat.id, text)
     else:
-        if call.data in selected_subjects:
-            selected_subjects.remove(call.data)
-        else:
-            selected_subjects.append(call.data)
-        bot.delete_message(call.message.chat.id, call.message.message_id)
-        ask_for_subjects(call.message.chat.id)
+        pass
+        # if call.data in dialogs.selected_subjects:
+        #     dialogs.selected_subjects.remove(call.data)
+        # else:
+        #     dialogs.selected_subjects.append(call.data)
+        # bot.delete_message(call.message.chat.id, call.message.message_id)
+        # dialogs.ask_for_subjects(call.message.chat.id)
 
 
-def ask_for_subjects(chat_id: int):
-    subjects = ['Дискретка', 'Линал', 'Матан', 'Аналгеом', 'Физика', 'Готово']
-    markup = telebot.types.InlineKeyboardMarkup(row_width=1)
-    for each in subjects:
-        if each in selected_subjects:
-            markup.add(telebot.types.InlineKeyboardButton(text=each + " ✅", callback_data=each))
-        else:
-            markup.add(telebot.types.InlineKeyboardButton(text=each, callback_data=each))
-    bot.send_message(chat_id, "Пожалуйста, выбери предметы, по которым тебе нужна помощь:", reply_markup=markup)
-
-
-if __name__ == '__main__':
-    bot.polling(none_stop=True)
+if __name__ == "__main__":
+    print(DialogEvent.ASK_FOR_NAME, type(DialogEvent.ASK_FOR_NAME))
+    while True:
+        try:
+            bot.polling(none_stop=True)
+        except Exception as err:
+            logger.error(err)
+            time.sleep(5)
+            print("Internet error!")
