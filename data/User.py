@@ -4,7 +4,7 @@ import components.core
 
 
 def __init_():
-    self = User("", "", [], [])
+    self = User("", "", [], [], 0)
 
 
 class User:
@@ -13,16 +13,15 @@ class User:
     faculty: str
     need_subjects: typing.List[str]
     give_subjects: typing.List[str]
-    user_hash: int
+    id: int
 
-    def __init__(self, name: str, faculty: str, need: typing.List[str], give: typing.List[str]):
+    def __init__(self, name: str, faculty: str, need: typing.List[str], give: typing.List[str], id: int):
         """A class constructor that automatically generates user hash."""
 
         self.name = name
         self.faculty = faculty
         self.need_subjects = need
         self.give_subjects = give
-        user_hash = components.core.generate_hash()
 
     def to_dict(self) -> typing.Dict:
         """A method that is used for user data serialization to dictionary."""
@@ -32,11 +31,11 @@ class User:
             "faculty": self.faculty,
             "need": self.need_subjects,
             "give": self.give_subjects,
-            "hash": self.user_hash
+            "id": self.id
         }
 
 
 class UserFactory:
     @staticmethod
-    def fake_user() -> User:
-        return User("", "", [], [])
+    def new_fake_user() -> User:
+        return User("", "", [], [], 0)

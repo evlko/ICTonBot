@@ -1,3 +1,4 @@
+vedis
 telebot
 telegram
 python-telegram-bot>=13.0
