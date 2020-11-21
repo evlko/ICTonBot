@@ -1,5 +1,6 @@
 import telebot
 import time
+import json
 
 import components.dialogs as dialogs
 from components.core import bot
@@ -9,32 +10,29 @@ from components.dialogs import DialogEvent
 
 @bot.message_handler(commands=["start", "help"])
 def start_messaging(message):
-    options = ["Начать общение", "О создателях"]
-    callbacks = [DialogEvent.ASK_FOR_NAME, DialogEvent.ABOUT]
-
-    markup = telebot.types.InlineKeyboardMarkup(row_width=1)
-    for option, callback in zip(options, callbacks):
-        markup.add(telebot.types.InlineKeyboardButton(text=option, callback_data=callback))
-
-    with open("text_messages/welcome_message.txt", "rt", encoding="utf-8") as f:
-        message_text = f.read()
-
-    bot.send_message(message.chat.id, message_text, reply_markup=markup)
+    dialogs.welcome_message(message.chat.id)
 
 
-@bot.callback_query_handler(func=lambda call: True)
+@bot.callback_query_handler(func=lambda call: str.isnumeric(call.data))
 def on_dialog_event(call):
+    """A function that catches dialog event callbacks."""
+    print(call.data)
     dialog_event = DialogEvent(int(call.data))
+    bot.delete_message(call.message.chat.id, call.message.message_id)
 
     if dialog_event == DialogEvent.ASK_FOR_NAME:
-        bot.delete_message(call.message.chat.id, call.message.message_id)
         dialogs.ask_for_name(call.message.chat.id)
     elif dialog_event == DialogEvent.ABOUT:
-        bot.delete_message(call.message.chat.id, call.message.message_id)
-        with open("text_messages/about.txt", "rt", encoding="utf-8") as f:
-            text = f.read()
-        bot.send_message(call.message.chat.id, text)
-    else:
+        dialogs.about(call.message.chat.id)
+    elif dialog_event in [DialogEvent.BACK_FROM_ASK_NAME, DialogEvent.BACK_FROM_ABOUT]:
+        dialogs.welcome_message(call.message.chat.id)
+    elif dialog_event == DialogEvent.NEED_SUBJECTS_READY:
+        bot.send_message(call.message.chat.id, "Окей")
+    elif dialog_event == DialogEvent.BACK_FROM_NEEDED_SUBJECTS:
+        dialogs.ask_for_faculty(call.message.chat.id)
+    elif dialog_event == DialogEvent.BACK_FROM_FACULTY:
+        dialogs.ask_for_name(call.message.chat.id)
+    elif call.data:
         pass
         # if call.data in dialogs.selected_subjects:
         #     dialogs.selected_subjects.remove(call.data)
@@ -42,6 +40,12 @@ def on_dialog_event(call):
         #     dialogs.selected_subjects.append(call.data)
         # bot.delete_message(call.message.chat.id, call.message.message_id)
         # dialogs.ask_for_subjects(call.message.chat.id)
+
+
+@bot.callback_query_handler(func=lambda call: not str.isnumeric(call.data))
+def on_string_callback(call):
+    """A callback function that is used to catch string callbacks (for example for subjects)"""
+    print("String callback was passed: " + call.data)
 
 
 if __name__ == "__main__":
