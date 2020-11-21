@@ -13,7 +13,7 @@ from components.dialogs import DialogEvent
 
 @bot.message_handler(commands=["start", "help"])
 def start_messaging(message):
-    dialogs.welcome_message(message.chat.id)
+    dialogs.welcome_message(message)
 
 
 @bot.callback_query_handler(func=lambda call: str.isnumeric(call.data))
@@ -21,22 +21,25 @@ def on_dialog_event(call):
     """A function that catches dialog event callbacks."""
     print(call.data)
     dialog_event = DialogEvent(int(call.data))
-    bot.delete_message(call.message.chat.id, call.message.message_id)
+    # bot.delete_message(call.message.chat.id, call.message.message_id)
 
     if dialog_event == DialogEvent.ASK_FOR_NAME:
-        dialogs.ask_for_name(call.message.chat.id)
+        dialogs.ask_for_name(call.message)
     elif dialog_event == DialogEvent.ABOUT:
         DatabaseWorker.set_state(call.message.chat.id, config.UserStates.ABOUT)
-        dialogs.about(call.message.chat.id)
+        dialogs.about(call.message)
     elif dialog_event in [DialogEvent.BACK_FROM_ASK_NAME, DialogEvent.BACK_FROM_ABOUT]:
+        bot.delete_message(call.message.chat.id, call.message.message_id)
         DatabaseWorker.set_state(call.message.chat.id, config.UserStates.START)
-        dialogs.welcome_message(call.message.chat.id)
+        dialogs.welcome_message(call.message)
     elif dialog_event == DialogEvent.NEED_SUBJECTS_READY:
-        bot.send_message(call.message.chat.id, "Окей")
+        bot.send_message(call.message.chat.id,  "Окей")
     elif dialog_event == DialogEvent.BACK_FROM_NEEDED_SUBJECTS:
-        dialogs.ask_for_faculty(call.message.chat.id)
+        bot.delete_message(call.message.chat.id, call.message.message_id)
+        dialogs.ask_for_faculty(call.message)
     elif dialog_event == DialogEvent.BACK_FROM_FACULTY:
-        dialogs.ask_for_name(call.message.chat.id)
+        bot.delete_message(call.message.chat.id, call.message.message_id)
+        dialogs.ask_for_name(call.message)
     elif call.data:
         pass
         # if call.data in dialogs.selected_subjects:

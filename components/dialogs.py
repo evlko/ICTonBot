@@ -25,7 +25,7 @@ class DialogEvent(IntEnum):
     # subjects
 
 
-def welcome_message(chat_id: int):
+def welcome_message(message):
     options = ["Начать общение", "О создателях"]
     callbacks = [DialogEvent.ASK_FOR_NAME, DialogEvent.ABOUT]
 
@@ -36,10 +36,10 @@ def welcome_message(chat_id: int):
     with open("text_messages/welcome_message.txt", "rt", encoding="utf-8") as f:
         message_text = f.read()
 
-    bot.send_message(chat_id, message_text, reply_markup=markup)
+    bot.send_message(message.chat.id, message_text, reply_markup=markup)
 
 
-def ask_for_name(chat_id: int):
+def ask_for_name(message):
     options = ["Назад"]
     markup = telebot.types.InlineKeyboardMarkup(row_width=1)
     for option in options:
@@ -48,7 +48,9 @@ def ask_for_name(chat_id: int):
     with open("text_messages/ask_for_name.txt", "rt", encoding="utf-8") as f:
         message_text = f.read()
 
-    message = bot.send_message(chat_id, message_text, reply_markup=markup)
+    bot.edit_message_text(chat_id=message.chat.id, message_id=message.message_id, text=message_text,
+                          reply_markup=markup)
+    # bot.send_message(message.chat.id, message_text, reply_markup=markup)
     # bot.register_next_step_handler(message, read_name)
     print(DatabaseWorker.get_current_state(message.chat.id))
     DatabaseWorker.set_state(message.chat.id, config.UserStates.ENTER_NAME.value)
@@ -60,10 +62,10 @@ def read_name(message):
     print("Registered new user with name " + message.text)
     new_user.name = message.text
 
-    ask_for_faculty(message.chat.id)
+    ask_for_faculty(message)
 
 
-def ask_for_faculty(chat_id: int):
+def ask_for_faculty(message):
     options = ["Назад"]
     markup = telebot.types.InlineKeyboardMarkup(row_width=1)
     for option in options:
@@ -72,7 +74,7 @@ def ask_for_faculty(chat_id: int):
     with open("text_messages/ask_for_faculty.txt", "rt", encoding="utf-8") as f:
         message_text = f.read().replace("USERNAME", new_user.name)
 
-    message = bot.send_message(chat_id, message_text, reply_markup=markup)
+    bot.send_message(message.chat.id, message_text, reply_markup=markup)
     # bot.register_next_step_handler(message, read_faculty)
     DatabaseWorker.set_state(message.chat.id, config.UserStates.ENTER_FACULTY.value)
 
@@ -84,10 +86,10 @@ def read_faculty(message):
     print("Faculty of " + new_user.name + " is " + message.text)
     new_user.faculty = message.text
 
-    ask_for_needed_subjects(message.chat.id)
+    ask_for_needed_subjects(message)
 
 
-def ask_for_needed_subjects(chat_id: int):
+def ask_for_needed_subjects(message):
     subjects = subject_list.keys()
 
     markup = telebot.types.InlineKeyboardMarkup(row_width=1)
@@ -104,11 +106,11 @@ def ask_for_needed_subjects(chat_id: int):
     with open("text_messages/ask_for_subjects.txt", "rt", encoding="utf-8") as f:
         message_text = f.read()
 
-    bot.send_message(chat_id, message_text, reply_markup=markup)
-    DatabaseWorker.set_state(chat_id, config.UserStates.NEEDED_SUBJECT_LIST)
+    bot.send_message(chat_id=message.chat.id, text=message_text, reply_markup=markup)
+    DatabaseWorker.set_state(message.chat.id, config.UserStates.NEEDED_SUBJECT_LIST)
 
 
-def about(chat_id: int):
+def about(message):
     options = ["Назад"]
     markup = telebot.types.InlineKeyboardMarkup(row_width=1)
     for option in options:
@@ -117,4 +119,5 @@ def about(chat_id: int):
     with open("text_messages/about.txt", "rt", encoding="utf-8") as f:
         message_text = f.read()
 
-    bot.send_message(chat_id, message_text, reply_markup=markup)
+    bot.edit_message_text(chat_id=message.chat.id, message_id=message.message_id, text=message_text,
+                          reply_markup=markup)
