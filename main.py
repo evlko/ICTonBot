@@ -2,9 +2,12 @@ import telebot
 import time
 import json
 
+from data.subject_list import subject_list
 import components.dialogs as dialogs
-from components.core import bot
-from components.core import logger
+import components.config as config
+from components.database.dbworker import DatabaseWorker
+from components.core import bot, logger
+from components.config import UserStates
 from components.dialogs import DialogEvent
 
 
@@ -23,8 +26,10 @@ def on_dialog_event(call):
     if dialog_event == DialogEvent.ASK_FOR_NAME:
         dialogs.ask_for_name(call.message.chat.id)
     elif dialog_event == DialogEvent.ABOUT:
+        DatabaseWorker.set_state(call.message.chat.id, config.UserStates.ABOUT)
         dialogs.about(call.message.chat.id)
     elif dialog_event in [DialogEvent.BACK_FROM_ASK_NAME, DialogEvent.BACK_FROM_ABOUT]:
+        DatabaseWorker.set_state(call.message.chat.id, config.UserStates.START)
         dialogs.welcome_message(call.message.chat.id)
     elif dialog_event == DialogEvent.NEED_SUBJECTS_READY:
         bot.send_message(call.message.chat.id, "Окей")
@@ -46,10 +51,31 @@ def on_dialog_event(call):
 def on_string_callback(call):
     """A callback function that is used to catch string callbacks (for example for subjects)"""
     print("String callback was passed: " + call.data)
+    clicked = str(call.data)
+
+    subjects = subject_list.keys()
+
+    markup = telebot.types.InlineKeyboardMarkup(row_width=1)
+
+    for subject in subjects:
+        if subject == clicked:
+            markup.add(telebot.types.InlineKeyboardButton(text=subject + " ✅", callback_data=subject))
+        else:
+            markup.add(telebot.types.InlineKeyboardButton(text=subject, callback_data=subject))
+
+    markup.add(telebot.types.InlineKeyboardButton(text="Готово", callback_data=DialogEvent.NEED_SUBJECTS_READY))
+    markup.add(telebot.types.InlineKeyboardButton(text="Назад", callback_data=DialogEvent.BACK_FROM_NEEDED_SUBJECTS))
+
+    with open("text_messages/ask_for_subjects.txt", "rt", encoding="utf-8") as f:
+        message_text = f.read()
+
+    bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text=message_text,
+                          reply_markup=markup)
 
 
 if __name__ == "__main__":
     print(DialogEvent.ASK_FOR_NAME, type(DialogEvent.ASK_FOR_NAME))
+    DatabaseWorker.set_state("192767028", UserStates.START.value)
     while True:
         try:
             bot.polling(none_stop=True)

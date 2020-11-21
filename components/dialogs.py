@@ -1,9 +1,11 @@
 import telebot
 from enum import IntEnum
 
+from components.database.dbworker import DatabaseWorker
 from components.core import bot
 from data.User import User, UserFactory
 from data.subject_list import subject_list
+import components.config as config
 
 selected_subjects = []
 new_user = UserFactory.new_fake_user()
@@ -47,9 +49,13 @@ def ask_for_name(chat_id: int):
         message_text = f.read()
 
     message = bot.send_message(chat_id, message_text, reply_markup=markup)
-    bot.register_next_step_handler(message, read_name)
+    # bot.register_next_step_handler(message, read_name)
+    print(DatabaseWorker.get_current_state(message.chat.id))
+    DatabaseWorker.set_state(message.chat.id, config.UserStates.ENTER_NAME.value)
 
 
+@bot.message_handler(
+    func=lambda message: DatabaseWorker.get_current_state(message.chat.id) == str(config.UserStates.ENTER_NAME.value))
 def read_name(message):
     print("Registered new user with name " + message.text)
     new_user.name = message.text
@@ -67,17 +73,21 @@ def ask_for_faculty(chat_id: int):
         message_text = f.read().replace("USERNAME", new_user.name)
 
     message = bot.send_message(chat_id, message_text, reply_markup=markup)
-    bot.register_next_step_handler(message, read_faculty)
+    # bot.register_next_step_handler(message, read_faculty)
+    DatabaseWorker.set_state(message.chat.id, config.UserStates.ENTER_FACULTY.value)
 
 
+@bot.message_handler(
+    func=lambda message: DatabaseWorker.get_current_state(message.chat.id) == str(
+        config.UserStates.ENTER_FACULTY.value))
 def read_faculty(message):
     print("Faculty of " + new_user.name + " is " + message.text)
-    new_user.name = message
+    new_user.faculty = message.text
 
-    ask_for_subjects(message.chat.id)
+    ask_for_needed_subjects(message.chat.id)
 
 
-def ask_for_subjects(chat_id: int):
+def ask_for_needed_subjects(chat_id: int):
     subjects = subject_list.keys()
 
     markup = telebot.types.InlineKeyboardMarkup(row_width=1)
@@ -95,6 +105,7 @@ def ask_for_subjects(chat_id: int):
         message_text = f.read()
 
     bot.send_message(chat_id, message_text, reply_markup=markup)
+    DatabaseWorker.set_state(chat_id, config.UserStates.NEEDED_SUBJECT_LIST)
 
 
 def about(chat_id: int):

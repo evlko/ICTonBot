@@ -1,7 +1,7 @@
 from enum import Enum
 
 TOKEN = "1245697834:AAERFJK5gT6B_JWpttQYkr7WjYJodcvH5G4"
-db_file = "database.vdb"
+db_file = "components/database/database.vdb"
 
 
 class UserStates(Enum):
