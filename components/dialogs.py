@@ -6,7 +6,7 @@ from data.User import User, UserFactory
 from data.subject_list import subject_list
 
 selected_subjects = []
-new_user = UserFactory.fake_user()
+new_user = UserFactory.new_fake_user()
 
 
 class DialogEvent(IntEnum):
