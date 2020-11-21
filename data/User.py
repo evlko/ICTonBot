@@ -1,10 +1,5 @@
+import json
 import typing
-
-import components.core
-
-
-def __init_():
-    self = User("", "", [], [], 0)
 
 
 class User:
@@ -13,9 +8,8 @@ class User:
     faculty: str
     need_subjects: typing.List[str]
     give_subjects: typing.List[str]
-    id: int
 
-    def __init__(self, name: str, faculty: str, need: typing.List[str], give: typing.List[str], id: int):
+    def __init__(self, name: str, faculty: str, need: typing.List[str], give: typing.List[str]):
         """A class constructor that automatically generates user hash."""
 
         self.name = name
@@ -30,12 +24,27 @@ class User:
             "name": self.name,
             "faculty": self.faculty,
             "need": self.need_subjects,
-            "give": self.give_subjects,
-            "id": self.id
+            "give": self.give_subjects
         }
 
 
 class UserFactory:
     @staticmethod
     def new_fake_user() -> User:
-        return User("", "", [], [], 0)
+        return User("", "", [], [])
+
+    @staticmethod
+    def new_user(name: str, faculty: str, need_subjects: typing.List[str], give_subjects: typing.List[str]) -> User:
+        return User(name=name, faculty=faculty, need=need_subjects, give=give_subjects)
+
+    @staticmethod
+    def from_dict(data: dict) -> User:
+        return UserFactory.new_user(data["name"], data["faculty"], data["need"], data["give"])
+
+
+def serialized(user: User) -> str:
+    return json.dumps(user.to_dict())
+
+
+def deserialized(data) -> User:
+    return UserFactory.from_dict(json.loads(data))
