@@ -38,7 +38,6 @@ def on_dialog_event(call):
         bot.delete_message(call.message.chat.id, call.message.message_id)
         dialogs.ask_for_faculty(call.message)
     elif dialog_event == DialogEvent.BACK_FROM_FACULTY:
-        bot.delete_message(call.message.chat.id, call.message.message_id)
         dialogs.ask_for_name(call.message)
     elif call.data:
         pass
