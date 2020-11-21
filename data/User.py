@@ -3,6 +3,10 @@ import typing
 import components.core
 
 
+def __init_():
+    self = User("", "", [], [])
+
+
 class User:
     """Data class that stores user data."""
     name: str
@@ -30,3 +34,9 @@ class User:
             "give": self.give_subjects,
             "hash": self.user_hash
         }
+
+
+class UserFactory:
+    @staticmethod
+    def fake_user() -> User:
+        return User("", "", [], [])
