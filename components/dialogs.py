@@ -1,13 +1,11 @@
+import telebot
 from enum import IntEnum
 
-import telebot
-
-import components.config as config
-from components.core import bot
 from components.database.dbworker import DatabaseWorker
+from components.core import bot
+from data.User import User, UserFactory
 from data.subject_list import subject_list
-
-selected_subjects = []
+import components.config as config
 
 
 class DialogEvent(IntEnum):
@@ -50,12 +48,16 @@ def ask_for_name(message):
 
     bot.edit_message_text(chat_id=message.chat.id, message_id=message.message_id, text=message_text,
                           reply_markup=markup)
+
+    print("DEBUG", DatabaseWorker.get_current_state(message.chat.id))
     DatabaseWorker.set_state(message.chat.id, config.UserState.ENTER_NAME)
+    print("DEBUG", DatabaseWorker.get_current_state(message.chat.id))
 
 
 @bot.message_handler(
     func=lambda message: DatabaseWorker.get_current_state(message.chat.id) == config.UserState.ENTER_NAME.value[0])
 def read_name(message):
+    print("Registered new user with name " + message.text)
     DatabaseWorker.set_username(message.chat.id, message.text)
 
     ask_for_faculty(message)
@@ -71,6 +73,7 @@ def ask_for_faculty(message):
         message_text = f.read().replace("USERNAME", DatabaseWorker.get_username(message.chat.id))
 
     bot.send_message(message.chat.id, message_text, reply_markup=markup)
+
     DatabaseWorker.set_state(message.chat.id, config.UserState.ENTER_FACULTY)
 
 
@@ -78,6 +81,8 @@ def ask_for_faculty(message):
     func=lambda message: DatabaseWorker.get_current_state(message.chat.id) == config.UserState.ENTER_FACULTY.value[0])
 def read_faculty(message):
     DatabaseWorker.set_faculty(message.chat.id, message.text)
+    print("Faculty of " + DatabaseWorker.get_username(message.chat.id) + " is " + DatabaseWorker.get_faculty(
+        message.chat.id))
 
     ask_for_needed_subjects(message)
 
@@ -86,6 +91,8 @@ def ask_for_needed_subjects(message):
     subjects = subject_list.keys()
 
     markup = telebot.types.InlineKeyboardMarkup(row_width=1)
+
+    selected_subjects = DatabaseWorker.get_needed_subject_list(message.chat.id)
 
     for subject in subjects:
         if subject in selected_subjects:
