@@ -38,6 +38,21 @@ class DatabaseWorker:
             db[user_id] = serialized(user)
 
     @staticmethod
+    def get_needed_subject_list(user_id) -> typing.List[str]:
+        with Vedis(config.db_file) as db:
+            user = deserialized(db[user_id].decode())
+            return user.need_subjects
+
+    @staticmethod
+    def set_needed_subject_list(user_id, subject_list: typing.List[str]):
+        with Vedis(config.db_file) as db:
+            user = deserialized(db[user_id].decode())
+            user.need_subjects = subject_list
+            print(serialized(user))
+
+            db[user_id] = serialized(user)
+
+    @staticmethod
     def get_current_state(user_id) -> str:
         with Vedis(config.db_file) as db:
             try:
