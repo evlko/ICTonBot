@@ -1,14 +1,13 @@
-import telebot
 from enum import IntEnum
 
-from components.database.dbworker import DatabaseWorker
-from components.core import bot
-from data.User import User, UserFactory
-from data.subject_list import subject_list
+import telebot
+
 import components.config as config
+from components.core import bot
+from components.database.dbworker import DatabaseWorker
+from data.subject_list import subject_list
 
 selected_subjects = []
-new_user = UserFactory.new_fake_user()
 
 
 class DialogEvent(IntEnum):
@@ -43,24 +42,21 @@ def ask_for_name(message):
     options = ["Назад"]
     markup = telebot.types.InlineKeyboardMarkup(row_width=1)
     for option in options:
-        markup.add(telebot.types.InlineKeyboardButton(text=option, callback_data=DialogEvent.BACK_FROM_ASK_NAME))
+        markup.add(
+            telebot.types.InlineKeyboardButton(text=option, callback_data=DialogEvent.BACK_FROM_ASK_NAME))
 
     with open("text_messages/ask_for_name.txt", "rt", encoding="utf-8") as f:
         message_text = f.read()
 
     bot.edit_message_text(chat_id=message.chat.id, message_id=message.message_id, text=message_text,
                           reply_markup=markup)
-    # bot.send_message(message.chat.id, message_text, reply_markup=markup)
-    # bot.register_next_step_handler(message, read_name)
-    print(DatabaseWorker.get_current_state(message.chat.id))
-    DatabaseWorker.set_state(message.chat.id, config.UserStates.ENTER_NAME.value)
+    DatabaseWorker.set_state(message.chat.id, config.UserState.ENTER_NAME)
 
 
 @bot.message_handler(
-    func=lambda message: DatabaseWorker.get_current_state(message.chat.id) == str(config.UserStates.ENTER_NAME.value))
+    func=lambda message: DatabaseWorker.get_current_state(message.chat.id) == config.UserState.ENTER_NAME.value[0])
 def read_name(message):
-    print("Registered new user with name " + message.text)
-    new_user.name = message.text
+    DatabaseWorker.set_username(message.chat.id, message.text)
 
     ask_for_faculty(message)
 
@@ -72,19 +68,16 @@ def ask_for_faculty(message):
         markup.add(telebot.types.InlineKeyboardButton(text=option, callback_data=DialogEvent.BACK_FROM_FACULTY))
 
     with open("text_messages/ask_for_faculty.txt", "rt", encoding="utf-8") as f:
-        message_text = f.read().replace("USERNAME", new_user.name)
+        message_text = f.read().replace("USERNAME", DatabaseWorker.get_username(message.chat.id))
 
     bot.send_message(message.chat.id, message_text, reply_markup=markup)
-    # bot.register_next_step_handler(message, read_faculty)
-    DatabaseWorker.set_state(message.chat.id, config.UserStates.ENTER_FACULTY.value)
+    DatabaseWorker.set_state(message.chat.id, config.UserState.ENTER_FACULTY)
 
 
 @bot.message_handler(
-    func=lambda message: DatabaseWorker.get_current_state(message.chat.id) == str(
-        config.UserStates.ENTER_FACULTY.value))
+    func=lambda message: DatabaseWorker.get_current_state(message.chat.id) == config.UserState.ENTER_FACULTY.value[0])
 def read_faculty(message):
-    print("Faculty of " + new_user.name + " is " + message.text)
-    new_user.faculty = message.text
+    DatabaseWorker.set_faculty(message.chat.id, message.text)
 
     ask_for_needed_subjects(message)
 
@@ -107,7 +100,7 @@ def ask_for_needed_subjects(message):
         message_text = f.read()
 
     bot.send_message(chat_id=message.chat.id, text=message_text, reply_markup=markup)
-    DatabaseWorker.set_state(message.chat.id, config.UserStates.NEEDED_SUBJECT_LIST)
+    DatabaseWorker.set_state(message.chat.id, config.UserState.NEEDED_SUBJECT_LIST)
 
 
 def about(message):

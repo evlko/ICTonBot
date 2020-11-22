@@ -4,7 +4,7 @@ TOKEN = "1245697834:AAERFJK5gT6B_JWpttQYkr7WjYJodcvH5G4"
 db_file = "components/database/database.vdb"
 
 
-class UserStates(Enum):
+class UserState(Enum):
     START = "0",
     ENTER_NAME = "1",
     ENTER_FACULTY = "2",

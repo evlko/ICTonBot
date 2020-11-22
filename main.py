@@ -1,14 +1,13 @@
-import telebot
 import time
-import json
+import telebot
 
-from data.subject_list import subject_list
-import components.dialogs as dialogs
 import components.config as config
-from components.database.dbworker import DatabaseWorker
+import components.dialogs as dialogs
+from components.config import UserState
 from components.core import bot, logger
-from components.config import UserStates
+from components.database.dbworker import DatabaseWorker
 from components.dialogs import DialogEvent
+from data.subject_list import subject_list
 
 
 @bot.message_handler(commands=["start", "help"])
@@ -26,14 +25,14 @@ def on_dialog_event(call):
     if dialog_event == DialogEvent.ASK_FOR_NAME:
         dialogs.ask_for_name(call.message)
     elif dialog_event == DialogEvent.ABOUT:
-        DatabaseWorker.set_state(call.message.chat.id, config.UserStates.ABOUT)
+        DatabaseWorker.set_state(call.message.chat.id, config.UserState.ABOUT)
         dialogs.about(call.message)
     elif dialog_event in [DialogEvent.BACK_FROM_ASK_NAME, DialogEvent.BACK_FROM_ABOUT]:
         bot.delete_message(call.message.chat.id, call.message.message_id)
-        DatabaseWorker.set_state(call.message.chat.id, config.UserStates.START)
+        DatabaseWorker.set_state(call.message.chat.id, config.UserState.START)
         dialogs.welcome_message(call.message)
     elif dialog_event == DialogEvent.NEED_SUBJECTS_READY:
-        bot.send_message(call.message.chat.id,  "Окей")
+        bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text="Окей")
     elif dialog_event == DialogEvent.BACK_FROM_NEEDED_SUBJECTS:
         bot.delete_message(call.message.chat.id, call.message.message_id)
         dialogs.ask_for_faculty(call.message)
@@ -77,7 +76,7 @@ def on_string_callback(call):
 
 if __name__ == "__main__":
     print(DialogEvent.ASK_FOR_NAME, type(DialogEvent.ASK_FOR_NAME))
-    DatabaseWorker.set_state("192767028", UserStates.START.value)
+    DatabaseWorker.set_state("192767028", UserState.START)
     while True:
         try:
             bot.polling(none_stop=True)
