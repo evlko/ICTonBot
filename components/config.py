@@ -11,3 +11,5 @@ class UserState(Enum):
     NEEDED_SUBJECT_LIST = "3",
     ABOUT = "4",
     GIVE_SUBJECT_LIST = "5",
+    REGISTERED = "6",
+    SEARCHING = "7"
