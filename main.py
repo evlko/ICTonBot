@@ -12,13 +12,17 @@ from data.subject_list import subject_list
 
 @bot.message_handler(commands=["start", "help"])
 def start_messaging(message):
-    dialogs.welcome_message(message)
+    if not DatabaseWorker.contain_user(message.chat.id):
+        dialogs.welcome_message(message)
+    else:
+        DatabaseWorker.set_state(message.chat.id, config.UserState.START)
+        dialogs.welcome_message(message)
 
 
 @bot.callback_query_handler(func=lambda call: str.isnumeric(call.data))
 def on_dialog_event(call):
     """A function that catches dialog event callbacks."""
-    print(call.data)
+    print(call)
     dialog_event = DialogEvent(int(call.data))
     # bot.delete_message(call.message.chat.id, call.message.message_id)
 
@@ -35,10 +39,7 @@ def on_dialog_event(call):
         dialogs.welcome_message(call.message)
 
     elif dialog_event == DialogEvent.NEED_SUBJECTS_READY:
-        bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id,
-                              text="Список предметов, с которыми вам надо помочь это:\n" +
-                              str(DatabaseWorker.get_needed_subject_list(call.message.chat.id)) +
-                              "\nВерно?")
+        dialogs.ask_for_give_subjects(call.message)
 
     elif dialog_event == DialogEvent.BACK_FROM_NEEDED_SUBJECTS:
         bot.delete_message(call.message.chat.id, call.message.message_id)
@@ -46,6 +47,17 @@ def on_dialog_event(call):
 
     elif dialog_event == DialogEvent.BACK_FROM_FACULTY:
         dialogs.ask_for_name(call.message)
+
+    elif dialog_event == DialogEvent.GIVE_SUBJECTS_READY:
+        dialogs.registered(call.message)
+
+    elif dialog_event == DialogEvent.BACK_FROM_GIVE_SUBJECTS:
+        bot.delete_message(call.message.chat.id, call.message.message_id)
+        dialogs.ask_for_needed_subjects(call.message)
+
+    elif dialog_event == DialogEvent.START_SEARCH:
+        DatabaseWorker.set_state(call.message.chat.id, config.UserState.SEARCHING)
+        dialogs.search_page(call.message)
 
 
 @bot.callback_query_handler(func=lambda call: not str.isnumeric(call.data))
@@ -74,11 +86,39 @@ def on_string_callback(call):
             else:
                 markup.add(telebot.types.InlineKeyboardButton(text=subject, callback_data=subject))
 
-        markup.add(telebot.types.InlineKeyboardButton(text="Готово", callback_data=DialogEvent.NEED_SUBJECTS_READY))
+        markup.add(telebot.types.InlineKeyboardButton(text="Далее", callback_data=DialogEvent.NEED_SUBJECTS_READY))
         markup.add(
             telebot.types.InlineKeyboardButton(text="Назад", callback_data=DialogEvent.BACK_FROM_NEEDED_SUBJECTS))
 
-        with open("text_messages/ask_for_subjects.txt", "rt", encoding="utf-8") as f:
+        with open("text_messages/ask_for_need_subjects.txt", "rt", encoding="utf-8") as f:
+            message_text = f.read()
+
+        bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text=message_text,
+                              reply_markup=markup)
+
+    elif current_state == config.UserState.GIVE_SUBJECT_LIST.value[0]:
+        give_subjects = DatabaseWorker.get_give_subject_list(call.message.chat.id)
+        if clicked_subject in give_subjects:
+            give_subjects.remove(clicked_subject)
+        else:
+            give_subjects.append(clicked_subject)
+
+        DatabaseWorker.set_give_subject_list(call.message.chat.id, give_subjects)
+
+        subjects = subject_list.keys()
+        markup = telebot.types.InlineKeyboardMarkup(row_width=1)
+
+        for subject in subjects:
+            if subject in give_subjects:
+                markup.add(telebot.types.InlineKeyboardButton(text=subject + " ✅", callback_data=subject))
+            else:
+                markup.add(telebot.types.InlineKeyboardButton(text=subject, callback_data=subject))
+
+        markup.add(telebot.types.InlineKeyboardButton(text="Далее", callback_data=DialogEvent.GIVE_SUBJECTS_READY))
+        markup.add(
+            telebot.types.InlineKeyboardButton(text="Назад", callback_data=DialogEvent.BACK_FROM_GIVE_SUBJECTS))
+
+        with open("text_messages/ask_for_give_subjects.txt", "rt", encoding="utf-8") as f:
             message_text = f.read()
 
         bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text=message_text,
