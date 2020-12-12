@@ -17,15 +17,29 @@ Help another person with programming, and he will help you with your math! <br>*
 
 ## Project structure
 ```
-├── components                  # Bot's basic business-logic
-├── data                        # Immutable date classes with serialization
-├── legacy                      # Older project version
+├── components ~> Bot's basic business-logic
+│        ├── config.py ---> Bot's configuration (TOKEN, etc)
+│        ├── core.py ---> WIP
+│        ├── database ~> Vedis database with its worker
+│        │         ├── database.vdb ---> Vedis database file
+│        │         └── dbworker.py ---> Database worker (reader, writer, etc)
+│        ├── dialogs.py ---> Dialog handler
+│        └── __init__.py ---> Initialization file
+├── data ~> Immutable date classes with serialization
+│        ├── Chat.py ---> Immutable chat class
+│        ├── subject_list.py ---> List of items that the bot provides.
+│        └── User.py ---> Immutable user class
+├── legacy ~> Older versions (Pending refactoring)
+│        └── old.py ---> Initial version (Pending refactoring)
 ├── LICENSE
-├── main.py
+├── main.py ---> Main Thinkder Bot launcher
 ├── README.md
 ├── requirements.txt
-├── tests                       # Unit tests
-└── text_messages               # Source of dialogues           
+├── tests ~> Unit tests
+│        ├── __init__.py ---> Initialization file
+│        ├── test_hash.py ---> Hash unit tests
+│        └── test_user.py ---> data.User class unit tests
+└── text_messages ~> Source of dialogues (used by components.dialogs)       
 ```
 
 ## Installation:
