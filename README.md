@@ -48,3 +48,4 @@ git clone https://github.com/evlko/ICTonBot && python setup.py
 ```   
 
 #### Made by Maestro The Loop "A" gang dedicated to ICTion, which took place in ITMO University 20.11-22.11.
+#### 🏆 This project took 🥇 first place in track and 🥈 second in overall standings among all projects at this hackathon.
